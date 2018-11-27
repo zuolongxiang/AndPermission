@@ -17,7 +17,10 @@ package com.yanzhenjie.permission.install;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 
 import com.yanzhenjie.permission.Action;
 import com.yanzhenjie.permission.AndPermission;
@@ -26,6 +29,7 @@ import com.yanzhenjie.permission.RequestExecutor;
 import com.yanzhenjie.permission.source.Source;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Created by YanZhenjie on 2018/6/1.
@@ -88,6 +92,15 @@ abstract class BaseRequest implements InstallRequest {
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         Uri uri = AndPermission.getFileUri(mSource.getContext(), mFile);
         intent.setDataAndType(uri, "application/vnd.android.package-archive");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            List<ResolveInfo> resInfoList = mSource.getContext().getPackageManager()
+                    .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            for (ResolveInfo resolveInfo : resInfoList) {
+                String packageName = resolveInfo.activityInfo.packageName;
+                mSource.getContext().grantUriPermission(packageName, uri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+        }
         mSource.startActivity(intent);
     }
 
